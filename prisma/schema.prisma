@@ -1,0 +1,78 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  patients Patient[]
+  doctors  Doctor[]
+  mappings PatientDoctor[]
+
+  @@map("users")
+}
+
+model Patient {
+  id             Int             @id @default(autoincrement())
+  name           String
+  age            Int
+  gender         String
+  address        String
+  phone          String
+  medicalHistory String?
+  createdById    Int
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  createdBy      User            @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  doctors        PatientDoctor[]
+
+  @@index([createdById])
+  @@map("patients")
+}
+
+model Doctor {
+  id             Int             @id @default(autoincrement())
+  name           String
+  specialization String
+  email          String          @unique
+  phone          String
+  address        String?
+  createdById    Int
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  createdBy      User            @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  patients       PatientDoctor[]
+
+  @@index([createdById])
+  @@map("doctors")
+}
+
+model PatientDoctor {
+  id          Int      @id @default(autoincrement())
+  patientId   Int
+  doctorId    Int
+  createdById Int
+  createdAt   DateTime @default(now())
+
+  patient     Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor      Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  createdBy   User     @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@unique([patientId, doctorId], name: "patientId_doctorId_unique")
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([createdById])
+  @@map("patient_doctors")
+}
